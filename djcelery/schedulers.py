@@ -13,6 +13,7 @@ from celery.utils.log import get_logger
 from celery.utils.timeutils import is_naive
 
 from django.db import transaction
+from django.db import connection
 from django.core.exceptions import ObjectDoesNotExist
 
 from .db import commit_on_success
@@ -170,6 +171,7 @@ class DatabaseScheduler(Scheduler):
         return s
 
     def schedule_changed(self):
+        connection.close()
         try:
             # If MySQL is running with transaction isolation level
             # REPEATABLE-READ (default), then we won't see changes done by
@@ -201,6 +203,7 @@ class DatabaseScheduler(Scheduler):
     def sync(self):
         info('Writing entries (%s)...', len(self._dirty))
         _tried = set()
+        connection.close()
         try:
             with commit_on_success():
                 while self._dirty:
